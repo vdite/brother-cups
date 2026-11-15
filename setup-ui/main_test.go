@@ -42,7 +42,7 @@ func TestRequestedDeviceURI(t *testing.T) {
 	t.Run("manual", func(t *testing.T) {
 		request := httptest.NewRequest("POST", "/printer/configure", strings.NewReader(url.Values{
 			"connection": {"manual"},
-			"printer_ip": {"192.168.178.53"},
+			"printer_ip": {"192.168.1.50"},
 		}.Encode()))
 		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		_ = request.ParseForm()
@@ -50,7 +50,7 @@ func TestRequestedDeviceURI(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if actual != "socket://192.168.178.53:9100" {
+		if actual != "socket://192.168.1.50:9100" {
 			t.Fatalf("unerwartete URI: %s", actual)
 		}
 	})
