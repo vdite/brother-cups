@@ -1,0 +1,84 @@
+name: brother-cups
+services:
+  brother-cups:
+    image: ghcr.io/vdite/brother-cups:latest
+    pull_policy: always
+    container_name: brother-cups
+    restart: unless-stopped
+    # Host-Netz, damit der Drucker per Bonjour/AirPrint im Heimnetz auftaucht
+    network_mode: host
+    environment:
+      ADMIN_USER: admin
+      ADMIN_PASSWORD: ""        # leer = Einrichtungsoberfläche ohne Login
+      BROTHER_CUPS_UI_PORT: "8631"
+      # Optional: Drucker automatisch anlegen statt über die Weboberfläche
+      PRINTER_URI: ""           # z. B. socket://192.168.1.50:9100
+      PRINTER_MODEL: ""         # z. B. MFC-7460DN
+      PRINTER_NAME: Brother
+      PAPER_SIZE: A4
+    volumes:
+      # Konfiguration dauerhaft speichern
+      - type: bind
+        source: /DATA/AppData/brother-cups
+        target: /etc/cups
+      # Avahi von ZimaOS mitbenutzen (AirPrint-Ankündigung)
+      - type: bind
+        source: /var/run/dbus
+        target: /var/run/dbus
+      # Damit CUPS vom Drucker gemeldete .local-Namen auflösen kann
+      - type: bind
+        source: /var/run/avahi-daemon/socket
+        target: /var/run/avahi-daemon/socket
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 4096
+    x-casaos:
+      envs:
+        - container: ADMIN_PASSWORD
+          description:
+            en_us: Optional password for the setup interface (empty = no login)
+            de_de: Optionales Passwort für die Einrichtungsoberfläche (leer = kein Login)
+        - container: PRINTER_URI
+          description:
+            en_us: Optional, printer address, e.g. socket://192.168.1.50:9100
+            de_de: Optional, Adresse des Druckers, z. B. socket://192.168.1.50:9100
+        - container: PRINTER_MODEL
+          description:
+            en_us: Optional, printer model as listed by brlaser, e.g. MFC-7460DN
+            de_de: Optional, Druckermodell laut brlaser-Liste, z. B. MFC-7460DN
+      ports:
+        - container: "8631"
+          description:
+            en_us: Easy printer setup
+            de_de: Einfache Druckereinrichtung
+        - container: "631"
+          description:
+            en_us: CUPS expert interface and AirPrint
+            de_de: CUPS-Expertenansicht und AirPrint
+      volumes:
+        - container: /etc/cups
+          description:
+            en_us: CUPS configuration
+            de_de: CUPS-Konfiguration
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: brother-cups
+  author: self
+  developer: self
+  category: Utilities
+  title:
+    en_us: Brother CUPS (AirPrint)
+  tagline:
+    en_us: AirPrint for older Brother laser printers
+    de_de: AirPrint für ältere Brother-Laserdrucker
+  description:
+    en_us: CUPS print server with the free brlaser driver. Makes older Brother laser printers available as AirPrint printers for Mac, iPhone and iPad, no Rosetta needed.
+    de_de: CUPS-Druckserver mit dem freien brlaser-Treiber. Macht ältere Brother-Laserdrucker als AirPrint-Drucker für Mac, iPhone und iPad verfügbar, ganz ohne Rosetta.
+  scheme: http
+  hostname: ""
+  port_map: "8631"
+  index: /

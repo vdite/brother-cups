@@ -1,0 +1,11 @@
+.DS_Store
+*.swp
+.claude/
+config/
+# interne Notizen, Entwürfe, Pläne
+notizen/
+*-entwurf.md
+plan-*.md
+agents_chat.md
+CLAUDE.md
+Intro.md

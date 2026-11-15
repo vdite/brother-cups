@@ -1,0 +1,9 @@
+.git
+*.swp
+.github
+.claude
+config
+notizen
+docs
+*.md
+!THIRD_PARTY_LICENSES.md

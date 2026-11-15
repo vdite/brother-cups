@@ -1,0 +1,26 @@
+# Für normale Linux-Server mit Docker. Baut das Image lokal aus diesem Repo.
+services:
+  brother-cups:
+    build: .
+    image: brother-cups:local
+    container_name: brother-cups
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      ADMIN_USER: admin
+      ADMIN_PASSWORD: ""        # leer = Einrichtungsoberfläche ohne Login
+      BROTHER_CUPS_UI_PORT: "8631"
+      # Optional: Drucker automatisch anlegen statt über die Weboberfläche
+      PRINTER_URI: ""           # z. B. socket://192.168.1.50:9100
+      PRINTER_MODEL: ""         # z. B. MFC-7460DN
+      PRINTER_NAME: Brother
+      PAPER_SIZE: A4
+    volumes:
+      - ./config:/etc/cups
+      - /var/run/dbus:/var/run/dbus
+      # Damit CUPS vom Drucker gemeldete .local-Namen auflösen kann
+      - /var/run/avahi-daemon/socket:/var/run/avahi-daemon/socket
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 4096
