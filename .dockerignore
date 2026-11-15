@@ -7,3 +7,4 @@ notizen
 docs
 *.md
 !THIRD_PARTY_LICENSES.md
+changelog.md
