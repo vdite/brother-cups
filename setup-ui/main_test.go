@@ -1,6 +1,7 @@
 package main
 
 import (
+	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -151,5 +152,73 @@ func TestPasswordModeRedirectsToLogin(t *testing.T) {
 	handler(response, httptest.NewRequest(http.MethodGet, "/", nil))
 	if response.Code != http.StatusSeeOther || response.Header().Get("Location") != "/login" {
 		t.Fatalf("unerwartete Antwort: %d %q", response.Code, response.Header().Get("Location"))
+	}
+}
+
+func TestRequestLang(t *testing.T) {
+	tests := map[string]string{
+		"de-DE,de;q=0.9,en;q=0.8": "de",
+		"en-US,en;q=0.9":          "en",
+		"fr-FR,fr;q=0.9,de;q=0.8": "de",
+		"fr-FR":                   "en",
+		"":                        "en",
+	}
+	for header, expected := range tests {
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+		request.Header.Set("Accept-Language", header)
+		if actual := requestLang(request); actual != expected {
+			t.Errorf("requestLang(%q) = %q, want %q", header, actual, expected)
+		}
+	}
+
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.Header.Set("Accept-Language", "de-DE")
+	request.AddCookie(&http.Cookie{Name: langCookie, Value: "en"})
+	if actual := requestLang(request); actual != "en" {
+		t.Errorf("language cookie ignored, got %q", actual)
+	}
+}
+
+func TestMessagesHaveSameKeys(t *testing.T) {
+	for lang, table := range messages {
+		for other, otherTable := range messages {
+			for key := range table {
+				if _, ok := otherTable[key]; !ok {
+					t.Errorf("key %q exists in %q but not in %q", key, lang, other)
+				}
+			}
+		}
+	}
+}
+
+func TestTemplatesRenderInAllLanguages(t *testing.T) {
+	tmpl, err := template.New("pages").Funcs(template.FuncMap{
+		"pathEscape": url.PathEscape,
+		"t":          tr,
+	}).ParseFS(webFiles, "web/*.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	printers := []printer{
+		{Name: "A", DisplayName: "A", State: "state.ready", StateClass: "ready"},
+		{Name: "B", DisplayName: "B", State: "state.printing", StateClass: "working", Jobs: 1},
+		{Name: "C", DisplayName: "C", State: "state.stopped", StateClass: "warning", Jobs: 3},
+	}
+	for lang := range messages {
+		for _, page := range []string{"index.html", "login.html"} {
+			var out strings.Builder
+			data := pageData{Lang: lang, AuthEnabled: true, Printers: printers, Flash: "x", FlashError: true}
+			if err := tmpl.ExecuteTemplate(&out, page, data); err != nil {
+				t.Fatalf("%s/%s: %v", lang, page, err)
+			}
+			for key := range messages[langEN] {
+				if strings.Contains(out.String(), ">"+key+"<") || strings.Contains(out.String(), "\""+key+"\"") {
+					t.Errorf("%s/%s shows untranslated key %q", lang, page, key)
+				}
+			}
+			if !strings.Contains(out.String(), `lang="`+lang+`"`) {
+				t.Errorf("%s/%s: html lang not set", lang, page)
+			}
+		}
 	}
 }

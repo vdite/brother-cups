@@ -1,35 +1,35 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{.Lang}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Drucker einrichten · Brother CUPS</title>
+  <title>{{t .Lang "page.title"}}</title>
   <link rel="stylesheet" href="/static/web/app.css">
   <script src="/static/web/app.js" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Brother CUPS Startseite">
+    <a class="brand" href="/" aria-label="{{t .Lang "brand.home"}}">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 32 32">
           <path d="M9 4h14v7H9zM7 12h18a4 4 0 0 1 4 4v7h-5v5H8v-5H3v-7a4 4 0 0 1 4-4Zm4-5v4h10V7Zm0 13v5h10v-5Z"/>
           <circle cx="24" cy="16" r="1.4"/>
         </svg>
       </span>
-      <span><strong>Brother CUPS</strong><small>AirPrint für ältere Drucker</small></span>
+      <span><strong>Brother CUPS</strong><small>{{t .Lang "brand.tagline"}}</small></span>
     </a>
-    <nav class="top-actions" aria-label="Kontomenü">
-      <a class="text-link expert-link" href="{{.CUPSBase}}" target="_blank" rel="noopener">Expertenansicht</a>
+    <nav class="top-actions" aria-label="{{t .Lang "nav.account"}}">
+      <a class="text-link expert-link" href="{{.CUPSBase}}" target="_blank" rel="noopener">{{t .Lang "nav.expert"}}</a>
       {{if .AuthEnabled}}
       <form method="post" action="/logout">
         <input type="hidden" name="csrf" value="{{.CSRF}}">
-        <button class="icon-button" type="submit" title="Abmelden" aria-label="Abmelden">
+        <button class="icon-button" type="submit" title="{{t .Lang "nav.logout"}}" aria-label="{{t .Lang "nav.logout"}}">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5v2H3V3h7v2Zm5.6 2.6L20 12l-4.4 4.4-1.4-1.4 2-2H8v-2h8.2l-2-2 1.4-1.4Z"/></svg>
         </button>
       </form>
       {{else}}
-      <span class="no-auth-badge">Ohne Passwort</span>
+      <span class="no-auth-badge">{{t .Lang "nav.no_password"}}</span>
       {{end}}
     </nav>
   </header>
@@ -37,9 +37,9 @@
   <main class="page-shell">
     <section class="hero">
       <div>
-        <p class="eyebrow">Druckserver auf ZimaOS</p>
-        <h1>Dein Drucker, wieder im Netz.</h1>
-        <p>Einrichten, per AirPrint freigeben und von Mac, iPhone oder iPad drucken – ohne alten Herstellertreiber.</p>
+        <p class="eyebrow">{{t .Lang "hero.eyebrow"}}</p>
+        <h1>{{t .Lang "hero.title"}}</h1>
+        <p>{{t .Lang "hero.text"}}</p>
       </div>
       <div class="hero-illustration" aria-hidden="true">
         <svg viewBox="0 0 160 140">
@@ -53,7 +53,7 @@
     </section>
 
     {{if .Flash}}
-      <div class="alert {{if hasPrefix .Flash "Fehler:"}}alert-error{{else}}alert-success{{end}}" role="status">
+      <div class="alert {{if .FlashError}}alert-error{{else}}alert-success{{end}}" role="status">
         {{.Flash}}
       </div>
     {{end}}
@@ -63,12 +63,12 @@
       <section class="section-block" aria-labelledby="ready-title">
         <div class="section-heading">
           <div>
-            <p class="step-label">Bereit zum Drucken</p>
-            <h2 id="ready-title">Eingerichtete Drucker</h2>
+            <p class="step-label">{{t .Lang "ready.label"}}</p>
+            <h2 id="ready-title">{{t .Lang "ready.title"}}</h2>
           </div>
           <span class="airprint-badge">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Zm0-6.5a9 9 0 0 1 6.4 2.7L16.3 17a6 6 0 0 0-8.6 0l-2.1-2.3A9 9 0 0 1 12 12Zm0-6a15 15 0 0 1 10.6 4.4l-2.1 2.1a12 12 0 0 0-17 0l-2.1-2.1A15 15 0 0 1 12 6Z"/></svg>
-            AirPrint aktiv
+            {{t .Lang "ready.airprint"}}
           </span>
         </div>
 
@@ -79,9 +79,9 @@
                 <svg viewBox="0 0 32 32"><path d="M9 4h14v7H9zM7 12h18a4 4 0 0 1 4 4v7h-5v5H8v-5H3v-7a4 4 0 0 1 4-4Zm4-5v4h10V7Zm0 13v5h10v-5Z"/><circle cx="24" cy="16" r="1.4"/></svg>
               </div>
               <div class="printer-main">
-                <div class="status-line"><span class="status-dot status-{{.StateClass}}"></span>{{.State}}</div>
+                <div class="status-line"><span class="status-dot status-{{.StateClass}}"></span>{{t $.Lang .State}}</div>
                 <h3>{{.DisplayName}}</h3>
-                <p>{{if .Jobs}}{{.Jobs}} Auftrag/Aufträge in der Warteschlange{{else}}Keine offenen Aufträge{{end}}</p>
+                <p>{{if eq .Jobs 0}}{{t $.Lang "jobs.none"}}{{else if eq .Jobs 1}}{{t $.Lang "jobs.one"}}{{else}}{{t $.Lang "jobs.many" .Jobs}}{{end}}</p>
               </div>
               <div class="printer-actions">
                 <form method="post" action="/printer/test">
@@ -89,10 +89,10 @@
                   <input type="hidden" name="printer" value="{{.Name}}">
                   <button class="button button-secondary" type="submit">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5H7V3Zm10 14v4H7v-4h10Zm2-8a3 3 0 0 1 3 3v6h-3v-3H5v3H2v-6a3 3 0 0 1 3-3h14Zm0 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg>
-                    Testseite
+                    {{t $.Lang "action.test_page"}}
                   </button>
                 </form>
-                <a class="button button-quiet" href="{{$.CUPSBase}}/printers/{{pathEscape .Name}}" target="_blank" rel="noopener">Details</a>
+                <a class="button button-quiet" href="{{$.CUPSBase}}/printers/{{pathEscape .Name}}" target="_blank" rel="noopener">{{t $.Lang "action.details"}}</a>
               </div>
             </article>
           {{end}}
@@ -102,56 +102,56 @@
 
     <section class="setup-card" aria-labelledby="setup-title">
       <div class="setup-intro">
-        <p class="step-label">{{if .Printers}}Weiteren Drucker einrichten{{else}}In drei Schritten startklar{{end}}</p>
-        <h2 id="setup-title">Brother-Drucker hinzufügen</h2>
-        <p>Wir suchen im Heimnetz nach Deinem Drucker und zeigen nur passende freie Brother-Treiber an.</p>
+        <p class="step-label">{{if .Printers}}{{t .Lang "setup.label_more"}}{{else}}{{t .Lang "setup.label_first"}}{{end}}</p>
+        <h2 id="setup-title">{{t .Lang "setup.title"}}</h2>
+        <p>{{t .Lang "setup.text"}}</p>
       </div>
 
       <form method="post" action="/printer/configure" id="setup-form" class="setup-form">
         <input type="hidden" name="csrf" value="{{.CSRF}}">
 
         <fieldset class="form-step">
-          <legend><span>1</span><strong>Drucker auswählen</strong></legend>
+          <legend><span>1</span><strong>{{t .Lang "step1.title"}}</strong></legend>
           <div class="form-step-content">
-            <label for="device-uri">Gefundene Drucker</label>
+            <label for="device-uri">{{t .Lang "step1.found"}}</label>
             <div class="select-wrap loading" id="device-select-wrap">
               <select name="device_uri" id="device-uri" disabled>
-                <option>Suche im Netzwerk läuft …</option>
+                <option>{{t .Lang "step1.searching"}}</option>
               </select>
               <span class="select-spinner" aria-hidden="true"></span>
             </div>
-            <p class="field-hint" id="discovery-status" aria-live="polite">Das kann einige Sekunden dauern.</p>
+            <p class="field-hint" id="discovery-status" aria-live="polite">{{t .Lang "step1.hint"}}</p>
 
             <details class="manual-box" id="manual-box">
-              <summary>Mein Drucker wird nicht gefunden</summary>
+              <summary>{{t .Lang "manual.summary"}}</summary>
               <div class="manual-content">
-                <label for="printer-ip">IP-Adresse des Druckers</label>
-                <input id="printer-ip" name="printer_ip" inputmode="numeric" placeholder="z. B. 192.168.1.50">
+                <label for="printer-ip">{{t .Lang "manual.ip"}}</label>
+                <input id="printer-ip" name="printer_ip" inputmode="numeric" placeholder="{{t .Lang "manual.placeholder"}}">
                 <input type="hidden" name="connection" id="connection-mode" value="discovered">
-                <p class="field-hint">Die IP-Adresse findest Du in Deinem Router. Port 9100 wird automatisch verwendet.</p>
+                <p class="field-hint">{{t .Lang "manual.hint"}}</p>
               </div>
             </details>
           </div>
         </fieldset>
 
         <fieldset class="form-step">
-          <legend><span>2</span><strong>Modell und Einstellungen</strong></legend>
+          <legend><span>2</span><strong>{{t .Lang "step2.title"}}</strong></legend>
           <div class="form-step-content two-column">
             <label class="wide" for="model-uri">
-              <span>Druckermodell</span>
+              <span>{{t .Lang "model.label"}}</span>
               <select name="model_uri" id="model-uri" required>
-                <option value="">Modell auswählen …</option>
+                <option value="">{{t .Lang "model.choose"}}</option>
                 {{range .Models}}<option value="{{.URI}}">{{.Name}}</option>{{end}}
               </select>
-              <small>Der passende freie brlaser-Treiber wird automatisch verwendet.</small>
+              <small>{{t .Lang "model.hint"}}</small>
             </label>
 
             <label for="description">
-              <span>Anzeigename</span>
+              <span>{{t .Lang "name.label"}}</span>
               <input name="description" id="description" placeholder="Brother MFC-7460DN" required>
             </label>
             <label for="paper-size">
-              <span>Papierformat</span>
+              <span>{{t .Lang "paper.label"}}</span>
               <select name="paper_size" id="paper-size">
                 <option value="A4" selected>A4</option>
                 <option value="Letter">US Letter</option>
@@ -160,14 +160,14 @@
 
             <label class="check-row wide">
               <input type="checkbox" name="duplex" value="yes" checked>
-              <span><strong>Beidseitigen Druck aktivieren</strong><small>Für Modelle mit automatischer Duplexeinheit.</small></span>
+              <span><strong>{{t .Lang "duplex.label"}}</strong><small>{{t .Lang "duplex.hint"}}</small></span>
             </label>
 
             <details class="advanced wide">
-              <summary>Erweiterte Einstellung</summary>
+              <summary>{{t .Lang "advanced.summary"}}</summary>
               <label for="queue-name">
-                <span>Interner Warteschlangenname</span>
-                <input name="queue_name" id="queue-name" placeholder="wird automatisch erzeugt">
+                <span>{{t .Lang "queue.label"}}</span>
+                <input name="queue_name" id="queue-name" placeholder="{{t .Lang "queue.placeholder"}}">
               </label>
             </details>
           </div>
@@ -176,16 +176,20 @@
         <div class="submit-row">
           <div class="privacy-note">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5.1 3.4 9.9 8 11 4.6-1.1 8-5.9 8-11V5l-8-3Zm0 3.2 5 1.9V11c0 3.6-2.2 7-5 8-2.8-1-5-4.4-5-8V7.1l5-1.9Z"/></svg>
-            <span>Die Einrichtung bleibt in Deinem Heimnetz.</span>
+            <span>{{t .Lang "privacy.note"}}</span>
           </div>
-          <button class="button button-primary button-large" type="submit">Drucker einrichten</button>
+          <button class="button button-primary button-large" type="submit">{{t .Lang "setup.submit"}}</button>
         </div>
       </form>
     </section>
 
     <footer class="page-footer">
-      <span>Brother CUPS verwendet CUPS und den freien brlaser-Treiber.</span>
-      <a href="{{.CUPSBase}}" target="_blank" rel="noopener">CUPS-Expertenansicht öffnen</a>
+      <span>{{t .Lang "footer.text"}}</span>
+      <a href="{{.CUPSBase}}" target="_blank" rel="noopener">{{t .Lang "footer.expert"}}</a>
+      <nav class="lang-switch" aria-label="{{t .Lang "footer.language"}}">
+        <a href="/?lang=en" lang="en" hreflang="en"{{if eq .Lang "en"}} aria-current="true"{{end}}>English</a>
+        <a href="/?lang=de" lang="de" hreflang="de"{{if eq .Lang "de"}} aria-current="true"{{end}}>Deutsch</a>
+      </nav>
     </footer>
   </main>
 </body>

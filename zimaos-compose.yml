@@ -5,27 +5,27 @@ services:
     pull_policy: always
     container_name: brother-cups
     restart: unless-stopped
-    # Host-Netz, damit der Drucker per Bonjour/AirPrint im Heimnetz auftaucht
+    # Host network, so the printer shows up via Bonjour/AirPrint on the home network
     network_mode: host
     environment:
       ADMIN_USER: admin
-      ADMIN_PASSWORD: ""        # leer = Einrichtungsoberfläche ohne Login
+      ADMIN_PASSWORD: ""        # empty = setup page without login
       BROTHER_CUPS_UI_PORT: "8631"
-      # Optional: Drucker automatisch anlegen statt über die Weboberfläche
-      PRINTER_URI: ""           # z. B. socket://192.168.1.50:9100
-      PRINTER_MODEL: ""         # z. B. MFC-7460DN
+      # Optional: create the printer automatically instead of using the setup page
+      PRINTER_URI: ""           # e.g. socket://192.168.1.50:9100
+      PRINTER_MODEL: ""         # e.g. MFC-7460DN
       PRINTER_NAME: Brother
       PAPER_SIZE: A4
     volumes:
-      # Konfiguration dauerhaft speichern
+      # Keep the configuration
       - type: bind
         source: /DATA/AppData/brother-cups
         target: /etc/cups
-      # Avahi von ZimaOS mitbenutzen (AirPrint-Ankündigung)
+      # Use ZimaOS's Avahi (AirPrint announcement)
       - type: bind
         source: /var/run/dbus
         target: /var/run/dbus
-      # Damit CUPS vom Drucker gemeldete .local-Namen auflösen kann
+      # Lets CUPS resolve .local names announced by the printer
       - type: bind
         source: /var/run/avahi-daemon/socket
         target: /var/run/avahi-daemon/socket

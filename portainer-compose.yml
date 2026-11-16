@@ -6,14 +6,14 @@ services:
     pull_policy: always
     container_name: brother-cups
     restart: unless-stopped
-    # Host-Netz wird für Bonjour/AirPrint benötigt.
+    # Host network is required for Bonjour/AirPrint.
     network_mode: host
     environment:
       ADMIN_USER: ${ADMIN_USER:-admin}
-      # In Portainer optional als Stack-Variable setzen. Leer = kein Login.
+      # Optionally set as a stack variable in Portainer. Empty = no login.
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       BROTHER_CUPS_UI_PORT: ${BROTHER_CUPS_UI_PORT:-8631}
-      # Optional: automatische Einrichtung statt über die Weboberfläche.
+      # Optional: automatic setup instead of using the setup page.
       PRINTER_URI: ${PRINTER_URI:-}
       PRINTER_MODEL: ${PRINTER_MODEL:-}
       PRINTER_NAME: ${PRINTER_NAME:-Brother}

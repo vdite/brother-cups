@@ -16,7 +16,7 @@ Hintergrund: [macOS 27 und alte Drucker](https://mizine.de/apple/macos-27-drucke
 
 - Basis: offizielles Image `debian:stable-slim`
 - Pakete aus Debian: `cups`, `cups-filters`, `printer-driver-brlaser`, `libnss-mdns`, `ghostscript`, `poppler-utils`
-- Eine einfache Einrichtungsoberfläche, die Drucker im Netz findet, passende brlaser-Modelle anbietet und Testseiten druckt
+- Eine einfache Einrichtungsoberfläche auf Deutsch und Englisch, die Drucker im Netz findet, passende brlaser-Modelle anbietet und Testseiten druckt
 - Ein kurzes Startskript (`entrypoint.sh`), das den Admin-Zugang anlegt und auf Wunsch auch den Drucker automatisch einrichtet
 
 Sonst nichts. Das Image wird per GitHub Actions direkt aus diesem Repo gebaut.
@@ -24,6 +24,8 @@ Sonst nichts. Das Image wird per GitHub Actions direkt aus diesem Repo gebaut.
 Fertiges Image für AMD64 und ARM64: `ghcr.io/vdite/brother-cups:latest`
 
 ## So sieht es aus
+
+Die Oberfläche richtet sich nach der Sprache des Browsers (Deutsch oder Englisch). Umschalten lässt sie sich unten auf der Seite.
 
 ![Brother-CUPS-Dashboard mit eingerichtetem Brother MFC-7460DN](docs/screenshots/dashboard.jpg)
 

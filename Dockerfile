@@ -1,4 +1,4 @@
-# Kleine, statisch gelinkte Einrichtungsoberfläche bauen.
+# Build the small, statically linked setup page.
 FROM golang:1.24-bookworm AS ui-builder
 
 WORKDIR /src
@@ -7,8 +7,8 @@ COPY setup-ui/*.go ./
 COPY setup-ui/web ./web
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /brother-cups-ui .
 
-# CUPS-Druckserver mit freiem brlaser-Treiber für ältere Brother-Laserdrucker.
-# Basis ist ausschließlich das offizielle Debian-Image, alle Pakete kommen aus Debian.
+# CUPS print server with the free brlaser driver for older Brother laser printers.
+# Based only on the official Debian image, all packages come from Debian.
 FROM debian:stable-slim
 
 RUN apt-get update \
@@ -24,9 +24,9 @@ RUN apt-get update \
       | sort > /usr/share/doc/brother-cups/installed-packages.txt \
  && rm -rf /var/lib/apt/lists/*
 
-# Drucken und Weboberfläche aus dem LAN erlauben, Drucker per Bonjour/AirPrint
-# ankündigen. Änderungen in der Weboberfläche brauchen den Admin-Login.
-# "Drucker freigeben" ist beim Hinzufügen standardmäßig angehakt.
+# Allow printing and the web interface from the LAN, announce printers via
+# Bonjour/AirPrint. Changes in the web interface require the admin login.
+# "Share This Printer" is checked by default when adding a printer.
 RUN sed -i \
       -e 's/^Listen localhost:631/Port 631/' \
       -e 's/^Browsing .*/Browsing Yes/' \

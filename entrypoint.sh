@@ -1,15 +1,14 @@
 #!/bin/sh
 set -e
 
-# Leeres Volume? Dann Standardkonfiguration hineinkopieren.
+# Empty volume? Copy the default configuration into it.
 if [ ! -f /etc/cups/cupsd.conf ]; then
-  echo "Lege Standardkonfiguration in /etc/cups an"
+  echo "Creating default configuration in /etc/cups"
   cp -a /etc/cups.default/. /etc/cups/
 fi
 
-# Admin-Benutzer anlegen. Ein leeres ADMIN_PASSWORD deaktiviert den Login der
-# einfachen Oberfläche. Für Änderungen in der CUPS-Expertenansicht ist dagegen
-# ein gesetztes Passwort erforderlich.
+# Create the admin user. An empty ADMIN_PASSWORD disables the login of the
+# simple setup page. Changes in the CUPS web interface still require a password.
 ADMIN_USER="${ADMIN_USER:-admin}"
 PW="${ADMIN_PASSWORD:-}"
 rm -f /etc/cups/.admin-password
@@ -17,10 +16,10 @@ id "$ADMIN_USER" >/dev/null 2>&1 || useradd -M -s /usr/sbin/nologin "$ADMIN_USER
 usermod -a -G lpadmin "$ADMIN_USER"
 if [ -n "$PW" ]; then
   echo "$ADMIN_USER:$PW" | chpasswd
-  echo "Die Einrichtungsoberfläche ist mit dem Benutzer $ADMIN_USER geschützt."
+  echo "The setup page is protected with the user $ADMIN_USER."
 else
   passwd -l "$ADMIN_USER" >/dev/null 2>&1 || true
-  echo "Kein ADMIN_PASSWORD gesetzt. Die Einrichtungsoberfläche läuft ohne Login."
+  echo "No ADMIN_PASSWORD set. The setup page runs without a login."
 fi
 
 mkdir -p /run/cups
@@ -36,27 +35,27 @@ shutdown() {
 }
 trap shutdown TERM INT
 
-# Warten, bis CUPS bereit ist
+# Wait until CUPS is ready
 i=0
 until lpstat -r 2>/dev/null | grep -q "is running"; do
   i=$((i + 1))
-  if [ "$i" -gt 30 ]; then echo "CUPS startet nicht" >&2; exit 1; fi
+  if [ "$i" -gt 30 ]; then echo "CUPS does not start" >&2; exit 1; fi
   sleep 1
 done
 
-# Drucker automatisch anlegen, wenn PRINTER_URI gesetzt ist
+# Create the printer automatically when PRINTER_URI is set
 if [ -n "$PRINTER_URI" ]; then
   NAME="${PRINTER_NAME:-Brother}"
   MODEL="${PRINTER_MODEL:-}"
   if [ -z "$MODEL" ]; then
-    echo "PRINTER_MODEL fehlt, z. B. MFC-7460DN" >&2
+    echo "PRINTER_MODEL is missing, e.g. MFC-7460DN" >&2
   else
     case "$MODEL" in
       drv://*|*.ppd) ;;
       *)
         FOUND="$(lpinfo -m | grep -i brlaser | grep -i -- "$MODEL" | head -n 1 | cut -d ' ' -f 1)"
         if [ -z "$FOUND" ]; then
-          echo "Kein brlaser-Treiber für \"$MODEL\" gefunden. Verfügbare Modelle:" >&2
+          echo "No brlaser driver found for \"$MODEL\". Available models:" >&2
           lpinfo -m | grep -i brlaser >&2
         fi
         MODEL="$FOUND"
@@ -66,15 +65,15 @@ if [ -n "$PRINTER_URI" ]; then
       # shellcheck disable=SC2086
       if lpadmin -p "$NAME" -E -v "$PRINTER_URI" -m "$MODEL" \
         -o printer-is-shared=true -o PageSize="${PAPER_SIZE:-A4}" ${PRINTER_OPTIONS:-}; then
-        echo "Drucker \"$NAME\" eingerichtet: $PRINTER_URI ($MODEL)"
+        echo "Printer \"$NAME\" set up: $PRINTER_URI ($MODEL)"
       else
-        echo "Drucker \"$NAME\" konnte nicht eingerichtet werden" >&2
+        echo "Printer \"$NAME\" could not be set up" >&2
       fi
     fi
   fi
 fi
 
-# Verständliche Einrichtungsoberfläche. Sie verwendet denselben Admin-Login wie CUPS.
+# Simple setup page. It uses the same admin login as CUPS.
 CUPS_ADMIN_PASSWORD="$PW" /usr/local/bin/brother-cups-ui &
 UI_PID=$!
 

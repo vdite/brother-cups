@@ -2,6 +2,29 @@
   const deviceSelect = document.querySelector('#device-uri');
   if (!deviceSelect) return;
 
+  // Texts for the printer search. The page language comes from <html lang>.
+  const texts = {
+    en: {
+      searchFailed: 'Search failed',
+      noPrinter: 'No network printer found',
+      openManual: 'Open "My printer isn\'t listed" below and enter its IP address.',
+      choose: 'Choose printer …',
+      found: (count) => (count === 1 ? '1 network printer found.' : `${count} network printers found.`),
+      unavailable: 'Printer discovery not available',
+      useIP: 'You can set up the printer by its IP address instead.',
+    },
+    de: {
+      searchFailed: 'Suche fehlgeschlagen',
+      noPrinter: 'Kein Netzwerkdrucker gefunden',
+      openManual: 'Öffne unten „Mein Drucker wird nicht gefunden“ und trage seine IP-Adresse ein.',
+      choose: 'Drucker auswählen …',
+      found: (count) => `${count} Netzwerkdrucker gefunden.`,
+      unavailable: 'Druckersuche nicht verfügbar',
+      useIP: 'Du kannst den Drucker stattdessen über seine IP-Adresse einrichten.',
+    },
+  };
+  const t = texts[document.documentElement.lang] || texts.en;
+
   const selectWrap = document.querySelector('#device-select-wrap');
   const status = document.querySelector('#discovery-status');
   const manualBox = document.querySelector('#manual-box');
@@ -57,7 +80,7 @@
 
   fetch('/api/devices', {headers: {'Accept': 'application/json'}})
     .then((response) => {
-      if (!response.ok) throw new Error('Suche fehlgeschlagen');
+      if (!response.ok) throw new Error(t.searchFailed);
       return response.json();
     })
     .then(({devices}) => {
@@ -66,22 +89,22 @@
       deviceSelect.disabled = false;
 
       if (!devices?.length) {
-        const option = new Option('Kein Netzwerkdrucker gefunden', '');
+        const option = new Option(t.noPrinter, '');
         deviceSelect.add(option);
-        status.textContent = 'Öffne unten „Mein Drucker wird nicht gefunden“ und trage seine IP-Adresse ein.';
+        status.textContent = t.openManual;
         manualBox.open = true;
         manualBox.dispatchEvent(new Event('toggle'));
         return;
       }
 
-      deviceSelect.add(new Option('Drucker auswählen …', ''));
+      deviceSelect.add(new Option(t.choose, ''));
       devices.forEach((device) => {
         const option = new Option(`${device.name} · ${device.protocol}`, device.uri);
         option.dataset.name = device.name;
         deviceSelect.add(option);
       });
       deviceSelect.required = true;
-      status.textContent = `${devices.length} Netzwerkdrucker gefunden.`;
+      status.textContent = t.found(devices.length);
       if (devices.length === 1) {
         deviceSelect.selectedIndex = 1;
         applyDevice();
@@ -89,9 +112,9 @@
     })
     .catch(() => {
       selectWrap.classList.remove('loading');
-      deviceSelect.replaceChildren(new Option('Druckersuche nicht verfügbar', ''));
+      deviceSelect.replaceChildren(new Option(t.unavailable, ''));
       deviceSelect.disabled = false;
-      status.textContent = 'Du kannst den Drucker stattdessen über seine IP-Adresse einrichten.';
+      status.textContent = t.useIP;
       manualBox.open = true;
       manualBox.dispatchEvent(new Event('toggle'));
     });

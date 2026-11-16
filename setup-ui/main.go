@@ -54,10 +54,12 @@ type application struct {
 }
 
 type pageData struct {
+	Lang        string
 	AdminUser   string
 	AuthEnabled bool
 	CSRF        string
 	Flash       string
+	FlashError  bool
 	Error       string
 	Printers    []printer
 	Models      []model
@@ -70,11 +72,11 @@ func main() {
 
 	funcs := template.FuncMap{
 		"pathEscape": url.PathEscape,
-		"hasPrefix":  strings.HasPrefix,
+		"t":          tr,
 	}
 	tmpl, err := template.New("pages").Funcs(funcs).ParseFS(webFiles, "web/*.html")
 	if err != nil {
-		log.Fatalf("Templates laden: %v", err)
+		log.Fatalf("loading templates: %v", err)
 	}
 
 	app := &application{
@@ -108,9 +110,9 @@ func main() {
 	}
 
 	if app.authEnabled {
-		log.Printf("Brother-CUPS-Einrichtung läuft mit Login auf Port %s", port)
+		log.Printf("Brother CUPS setup page running with login on port %s", port)
 	} else {
-		log.Printf("Brother-CUPS-Einrichtung läuft ohne Login auf Port %s", port)
+		log.Printf("Brother CUPS setup page running without login on port %s", port)
 	}
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
@@ -141,7 +143,11 @@ func (app *application) loginPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	app.render(w, "login.html", pageData{AdminUser: app.adminUser})
+	if setLangFromQuery(w, r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	app.render(w, "login.html", pageData{Lang: requestLang(r), AdminUser: app.adminUser})
 }
 
 func (app *application) login(w http.ResponseWriter, r *http.Request) {
@@ -149,8 +155,9 @@ func (app *application) login(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+	lang := requestLang(r)
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Ungültige Anfrage", http.StatusBadRequest)
+		http.Error(w, tr(lang, "err.bad_request"), http.StatusBadRequest)
 		return
 	}
 
@@ -159,8 +166,9 @@ func (app *application) login(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Retry-After", fmt.Sprintf("%d", int(wait.Seconds())+1))
 		w.WriteHeader(http.StatusTooManyRequests)
 		app.render(w, "login.html", pageData{
+			Lang:      lang,
 			AdminUser: app.adminUser,
-			Error:     "Zu viele Anmeldeversuche. Bitte kurz warten.",
+			Error:     tr(lang, "login.too_many"),
 		})
 		return
 	}
@@ -171,15 +179,16 @@ func (app *application) login(w http.ResponseWriter, r *http.Request) {
 		app.recordLoginFailure(clientIP)
 		w.WriteHeader(http.StatusUnauthorized)
 		app.render(w, "login.html", pageData{
+			Lang:      lang,
 			AdminUser: app.adminUser,
-			Error:     "Benutzername oder Passwort stimmen nicht.",
+			Error:     tr(lang, "login.wrong"),
 		})
 		return
 	}
 
 	app.clearLoginFailures(clientIP)
 	if err := app.createSession(w); err != nil {
-		http.Error(w, "Sitzung konnte nicht erstellt werden", http.StatusInternalServerError)
+		http.Error(w, tr(lang, "err.session_failed"), http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -187,7 +196,7 @@ func (app *application) login(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) logout(w http.ResponseWriter, r *http.Request) {
 	if !app.validCSRF(r) {
-		http.Error(w, "Ungültige Sitzung", http.StatusForbidden)
+		http.Error(w, tr(requestLang(r), "err.invalid_session"), http.StatusForbidden)
 		return
 	}
 	if cookie, err := r.Cookie(sessionCookie); err == nil {
@@ -200,39 +209,48 @@ func (app *application) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
+	if setLangFromQuery(w, r) {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	lang := requestLang(r)
 	sess, _ := app.currentSession(r)
 	printers, err := listPrinters()
 	if err != nil {
 		app.render(w, "index.html", pageData{
+			Lang:        lang,
 			AdminUser:   app.adminUser,
 			AuthEnabled: app.authEnabled,
 			CSRF:        sess.CSRF,
-			Error:       "CUPS ist noch nicht bereit. Bitte lade die Seite gleich noch einmal.",
+			Error:       tr(lang, "err.cups_not_ready"),
 			CUPSBase:    cupsBaseURL(r),
 		})
 		return
 	}
 	models, err := app.models()
 	if err != nil {
-		log.Printf("Modelle lesen: %v", err)
+		log.Printf("reading models: %v", err)
 	}
 
+	flash, flashError := readFlash(w, r)
 	app.render(w, "index.html", pageData{
+		Lang:        lang,
 		AdminUser:   app.adminUser,
 		AuthEnabled: app.authEnabled,
 		CSRF:        sess.CSRF,
-		Flash:       readFlash(w, r),
+		Flash:       flash,
+		FlashError:  flashError,
 		Printers:    printers,
 		Models:      models,
 		CUPSBase:    cupsBaseURL(r),
 	})
 }
 
-func (app *application) devicesAPI(w http.ResponseWriter, _ *http.Request) {
+func (app *application) devicesAPI(w http.ResponseWriter, r *http.Request) {
 	devices, err := discoverDevices()
 	if err != nil {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{
-			"error": "Die Druckersuche ist gerade nicht verfügbar.",
+			"error": tr(requestLang(r), "err.discovery"),
 		})
 		return
 	}
@@ -241,35 +259,36 @@ func (app *application) devicesAPI(w http.ResponseWriter, _ *http.Request) {
 
 func (app *application) configurePrinter(w http.ResponseWriter, r *http.Request) {
 	if !app.validCSRF(r) {
-		http.Error(w, "Ungültige Sitzung", http.StatusForbidden)
+		http.Error(w, tr(requestLang(r), "err.invalid_session"), http.StatusForbidden)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Ungültige Anfrage", http.StatusBadRequest)
+		http.Error(w, tr(requestLang(r), "err.bad_request"), http.StatusBadRequest)
 		return
 	}
 
+	lang := requestLang(r)
 	description := strings.TrimSpace(r.FormValue("description"))
 	if description == "" {
-		description = "Brother Drucker"
+		description = tr(lang, "default.printer_name")
 	}
 	queueName := normalizeQueueName(r.FormValue("queue_name"))
 	if queueName == "" {
 		queueName = normalizeQueueName(description)
 	}
 	if queueName == "" {
-		failRedirect(w, r, "Bitte gib einen Namen für den Drucker ein.")
+		failRedirect(w, r, tr(lang, "err.name_missing"))
 		return
 	}
 
 	deviceURI, err := requestedDeviceURI(r)
 	if err != nil {
-		failRedirect(w, r, err.Error())
+		failRedirect(w, r, tr(lang, err.Error()))
 		return
 	}
 	modelURI := r.FormValue("model_uri")
 	if !app.knownModel(modelURI) {
-		failRedirect(w, r, "Bitte wähle ein unterstütztes Brother-Modell aus.")
+		failRedirect(w, r, tr(lang, "err.model"))
 		return
 	}
 
@@ -293,40 +312,41 @@ func (app *application) configurePrinter(w http.ResponseWriter, r *http.Request)
 		"-o", "Duplex=" + duplex,
 	}
 	if _, err := runCommand("lpadmin", args...); err != nil {
-		log.Printf("Drucker einrichten: %v", err)
-		failRedirect(w, r, "Der Drucker konnte nicht eingerichtet werden. Öffne die Expertenansicht für Details.")
+		log.Printf("setting up printer: %v", err)
+		failRedirect(w, r, tr(lang, "err.setup_failed"))
 		return
 	}
 	_, _ = runCommand("lpadmin", "-d", queueName)
-	setFlash(w, fmt.Sprintf("%s ist eingerichtet und per AirPrint freigegeben.", description))
+	setFlash(w, tr(lang, "flash.configured", description), false)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (app *application) testPrinter(w http.ResponseWriter, r *http.Request) {
 	if !app.validCSRF(r) {
-		http.Error(w, "Ungültige Sitzung", http.StatusForbidden)
+		http.Error(w, tr(requestLang(r), "err.invalid_session"), http.StatusForbidden)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Ungültige Anfrage", http.StatusBadRequest)
+		http.Error(w, tr(requestLang(r), "err.bad_request"), http.StatusBadRequest)
 		return
 	}
+	lang := requestLang(r)
 	name := r.FormValue("printer")
 	if !printerExists(name) {
-		failRedirect(w, r, "Der ausgewählte Drucker existiert nicht mehr.")
+		failRedirect(w, r, tr(lang, "err.printer_gone"))
 		return
 	}
 	output, err := runCommand("lp", "-d", name, "/usr/share/cups/data/testprint")
 	if err != nil {
-		log.Printf("Testseite: %v", err)
-		failRedirect(w, r, "Die Testseite konnte nicht gesendet werden.")
+		log.Printf("test page: %v", err)
+		failRedirect(w, r, tr(lang, "err.test_failed"))
 		return
 	}
-	message := "Testseite wurde an den Drucker gesendet."
+	message := tr(lang, "flash.test_sent")
 	if strings.TrimSpace(output) != "" {
 		message = strings.TrimSpace(output)
 	}
-	setFlash(w, message)
+	setFlash(w, message, false)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -335,14 +355,14 @@ func (app *application) requireSession(next http.HandlerFunc) http.HandlerFunc {
 		if _, ok := app.currentSession(r); !ok {
 			if !app.authEnabled && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 				if err := app.createSession(w); err != nil {
-					http.Error(w, "Sitzung konnte nicht erstellt werden", http.StatusInternalServerError)
+					http.Error(w, tr(requestLang(r), "err.session_failed"), http.StatusInternalServerError)
 					return
 				}
 				http.Redirect(w, r, r.URL.RequestURI(), http.StatusSeeOther)
 				return
 			}
 			if !app.authEnabled {
-				http.Error(w, "Ungültige Sitzung", http.StatusForbidden)
+				http.Error(w, tr(requestLang(r), "err.invalid_session"), http.StatusForbidden)
 				return
 			}
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -468,7 +488,7 @@ func (app *application) pruneSessionsLocked() {
 func (app *application) render(w http.ResponseWriter, name string, data pageData) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := app.templates.ExecuteTemplate(w, name, data); err != nil {
-		log.Printf("Template %s: %v", name, err)
+		log.Printf("template %s: %v", name, err)
 	}
 }
 
@@ -476,7 +496,7 @@ func requestedDeviceURI(r *http.Request) (string, error) {
 	if r.FormValue("connection") == "manual" {
 		ip := strings.TrimSpace(r.FormValue("printer_ip"))
 		if net.ParseIP(ip) == nil {
-			return "", errors.New("Bitte gib eine gültige IP-Adresse des Druckers ein.")
+			return "", errors.New("err.invalid_ip")
 		}
 		if strings.Contains(ip, ":") {
 			ip = "[" + ip + "]"
@@ -486,15 +506,15 @@ func requestedDeviceURI(r *http.Request) (string, error) {
 
 	rawURI := strings.TrimSpace(r.FormValue("device_uri"))
 	if len(rawURI) > 2048 || strings.ContainsAny(rawURI, "\x00\r\n") {
-		return "", errors.New("Bitte wähle einen gefundenen Drucker aus.")
+		return "", errors.New("err.choose_device")
 	}
 	scheme, target, found := strings.Cut(rawURI, "://")
 	if !found || strings.Trim(target, "/") == "" {
-		return "", errors.New("Bitte wähle einen gefundenen Drucker aus.")
+		return "", errors.New("err.choose_device")
 	}
 	allowed := map[string]bool{"dnssd": true, "socket": true, "lpd": true, "ipp": true, "ipps": true}
 	if !allowed[strings.ToLower(scheme)] {
-		return "", errors.New("Diese Druckerverbindung wird nicht unterstützt.")
+		return "", errors.New("err.unsupported_uri")
 	}
 	return rawURI, nil
 }
@@ -584,10 +604,15 @@ func remoteIP(r *http.Request) string {
 	return r.RemoteAddr
 }
 
-func setFlash(w http.ResponseWriter, message string) {
+// Flash messages carry a one-character marker: "!" for errors, "+" otherwise.
+func setFlash(w http.ResponseWriter, message string, isError bool) {
+	marker := "+"
+	if isError {
+		marker = "!"
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     flashCookie,
-		Value:    base64.RawURLEncoding.EncodeToString([]byte(message)),
+		Value:    base64.RawURLEncoding.EncodeToString([]byte(marker + message)),
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
@@ -595,21 +620,25 @@ func setFlash(w http.ResponseWriter, message string) {
 	})
 }
 
-func readFlash(w http.ResponseWriter, r *http.Request) string {
+func readFlash(w http.ResponseWriter, r *http.Request) (string, bool) {
 	cookie, err := r.Cookie(flashCookie)
 	if err != nil {
-		return ""
+		return "", false
 	}
 	http.SetCookie(w, &http.Cookie{Name: flashCookie, Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 	decoded, err := base64.RawURLEncoding.DecodeString(cookie.Value)
 	if err != nil {
-		return ""
+		return "", false
 	}
-	return string(decoded)
+	message := string(decoded)
+	if message == "" {
+		return "", false
+	}
+	return message[1:], message[0] == '!'
 }
 
 func failRedirect(w http.ResponseWriter, r *http.Request, message string) {
-	setFlash(w, "Fehler: "+message)
+	setFlash(w, message, true)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 

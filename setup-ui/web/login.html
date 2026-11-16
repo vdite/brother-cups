@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="de">
+<html lang="{{.Lang}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Anmelden · Brother CUPS</title>
+  <title>{{t .Lang "login.page_title"}}</title>
   <link rel="stylesheet" href="/static/web/app.css">
 </head>
 <body class="login-page">
@@ -17,24 +17,28 @@
         </svg>
       </div>
       <p class="eyebrow">Brother CUPS</p>
-      <h1 id="login-title">Drucker einrichten</h1>
-      <p class="login-intro">Melde Dich mit den Zugangsdaten an, die Du bei der Installation festgelegt hast.</p>
+      <h1 id="login-title">{{t .Lang "login.title"}}</h1>
+      <p class="login-intro">{{t .Lang "login.intro"}}</p>
 
       {{if .Error}}<div class="alert alert-error" role="alert">{{.Error}}</div>{{end}}
 
       <form method="post" action="/login" class="stack-form">
         <label>
-          <span>Benutzername</span>
+          <span>{{t .Lang "login.username"}}</span>
           <input name="username" value="{{.AdminUser}}" autocomplete="username" required autofocus>
         </label>
         <label>
-          <span>Passwort</span>
+          <span>{{t .Lang "login.password"}}</span>
           <input type="password" name="password" autocomplete="current-password" required>
         </label>
-        <button class="button button-primary button-full" type="submit">Anmelden</button>
+        <button class="button button-primary button-full" type="submit">{{t .Lang "login.submit"}}</button>
       </form>
 
-      <p class="helper-text">Das Passwort entspricht der Umgebungsvariable <code>ADMIN_PASSWORD</code>.</p>
+      <p class="helper-text">{{t .Lang "login.helper"}} <code>ADMIN_PASSWORD</code>.</p>
+      <nav class="lang-switch" aria-label="{{t .Lang "footer.language"}}">
+        <a href="/login?lang=en" lang="en" hreflang="en"{{if eq .Lang "en"}} aria-current="true"{{end}}>English</a>
+        <a href="/login?lang=de" lang="de" hreflang="de"{{if eq .Lang "de"}} aria-current="true"{{end}}>Deutsch</a>
+      </nav>
     </section>
   </main>
 </body>

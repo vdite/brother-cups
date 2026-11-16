@@ -16,7 +16,7 @@ Background (German): [macOS 27 and old printers](https://mizine.de/apple/macos-2
 
 - Base: the official `debian:stable-slim` image
 - Debian packages: `cups`, `cups-filters`, `printer-driver-brlaser`, `libnss-mdns`, `ghostscript`, `poppler-utils`
-- A simple setup page that finds printers on the network, suggests the matching brlaser model and prints test pages
+- A simple setup page in English and German that finds printers on the network, suggests the matching brlaser model and prints test pages
 - A short start script (`entrypoint.sh`) that creates the admin login and can optionally set up the printer automatically
 
 Nothing else. The image is built by GitHub Actions straight from this repo.
@@ -25,7 +25,7 @@ Ready-made image for AMD64 and ARM64: `ghcr.io/vdite/brother-cups:latest`
 
 ## Screenshots
 
-The setup page is in German for now.
+The setup page follows your browser's language (English or German). You can switch it in the footer.
 
 ![Brother CUPS dashboard with a Brother MFC-7460DN set up](docs/screenshots/dashboard.jpg)
 
@@ -95,8 +95,8 @@ Then open `http://<server-ip>:8631`.
 1. Open the setup page at `http://<server-ip>:8631`. If `ADMIN_PASSWORD` is set, log in with `admin` and that password.
 2. Wait a moment until the printer search has finished, then select your Brother printer.
 3. Choose the matching model. If the model name is unambiguous, it is already preselected.
-4. Check paper size and duplex, then click **Drucker einrichten** (set up printer).
-5. Use **Testseite** (test page) to check right away that everything works.
+4. Check paper size and duplex, then click **Set up printer**.
+5. Use **Test page** to check right away that everything works.
 
 If the printer isn't found automatically, you can enter its fixed IP address. The setup page then uses `socket://<ip>:9100`.
 

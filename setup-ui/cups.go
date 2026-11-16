@@ -241,17 +241,18 @@ func parseJobCounts(output string) map[string]int {
 	return result
 }
 
+// friendlyPrinterState returns a message key (see i18n.go) and a CSS class.
 func friendlyPrinterState(line string) (string, string) {
 	lower := strings.ToLower(line)
 	switch {
 	case strings.Contains(lower, "disabled"):
-		return "Angehalten", "warning"
+		return "state.stopped", "warning"
 	case strings.Contains(lower, "printing"):
-		return "Druckt gerade", "working"
+		return "state.printing", "working"
 	case strings.Contains(lower, "idle"):
-		return "Bereit", "ready"
+		return "state.ready", "ready"
 	default:
-		return "Status unbekannt", "neutral"
+		return "state.unknown", "neutral"
 	}
 }
 
