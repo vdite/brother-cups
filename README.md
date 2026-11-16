@@ -1,64 +1,84 @@
-# Brother CUPS: AirPrint für ältere Brother-Laserdrucker
+# Brother CUPS: AirPrint for older Brother laser printers
 
-Ein kleiner CUPS-Druckserver im Docker-Container, mit dem freien Treiber [brlaser](https://github.com/Owl-Maintain/brlaser). Er macht ältere Brother-Laserdrucker, die selbst kein AirPrint können, im Heimnetz als **AirPrint-Drucker** verfügbar. Mac, iPhone und iPad drucken dann ohne Herstellertreiber und ohne Rosetta.
+**English** · [Deutsch](README.de.md)
 
-## Warum?
+A small CUPS print server in a Docker container, using the free [brlaser](https://github.com/Owl-Maintain/brlaser) driver. It makes older Brother laser printers that have no AirPrint of their own available on your home network as **AirPrint printers**. Macs, iPhones and iPads can then print without any vendor driver and without Rosetta.
 
-Viele Brother-Treiber für macOS sind reiner Intel-Code und laufen auf Macs mit Apple-Chip nur über Rosetta 2. macOS 27 entfernt Rosetta beim Update, mit macOS 28 fällt es für normale Programme ganz weg. Ein Drucker wie der MFC-7460DN (Baujahr um 2011) funktioniert dann am Mac nicht mehr, obwohl er technisch einwandfrei ist.
+## Why?
 
-Dieser Container übernimmt das Drucken im Netz. Dem Mac ist es dann egal, welcher Treiber dahintersteckt.
+Many Brother drivers for macOS are Intel-only code and run on Apple silicon Macs only through Rosetta 2. Updating to macOS 27.0 or 27.1 removes Rosetta, and with macOS 28 it goes away for regular apps entirely. A printer like the MFC-7460DN (from around 2011) then stops working on the Mac, even though the hardware is perfectly fine.
 
-Hintergrund: [macOS 27 und alte Drucker](https://mizine.de/apple/macos-27-drucker-rosetta/) auf mizine.de.
+This container takes over printing on the network. The Mac no longer cares which driver sits behind it.
 
-## Was ist drin?
+Background (German): [macOS 27 and old printers](https://mizine.de/apple/macos-27-drucker-rosetta/) on mizine.de.
 
-- Basis: offizielles Image `debian:stable-slim`
-- Pakete aus Debian: `cups`, `cups-filters`, `printer-driver-brlaser`, `libnss-mdns`, `ghostscript`, `poppler-utils`
-- Eine einfache Einrichtungsoberfläche, die Drucker im Netz findet, passende brlaser-Modelle anbietet und Testseiten druckt
-- Ein kurzes Startskript (`entrypoint.sh`), das den Admin-Zugang anlegt und auf Wunsch auch den Drucker automatisch einrichtet
+## What's inside?
 
-Sonst nichts. Das Image wird per GitHub Actions direkt aus diesem Repo gebaut.
+- Base: the official `debian:stable-slim` image
+- Debian packages: `cups`, `cups-filters`, `printer-driver-brlaser`, `libnss-mdns`, `ghostscript`, `poppler-utils`
+- A simple setup page that finds printers on the network, suggests the matching brlaser model and prints test pages
+- A short start script (`entrypoint.sh`) that creates the admin login and can optionally set up the printer automatically
 
-Fertiges Image für AMD64 und ARM64: `ghcr.io/vdite/brother-cups:latest`
+Nothing else. The image is built by GitHub Actions straight from this repo.
 
-## So sieht es aus
+Ready-made image for AMD64 and ARM64: `ghcr.io/vdite/brother-cups:latest`
 
-![Brother-CUPS-Dashboard mit eingerichtetem Brother MFC-7460DN](docs/screenshots/dashboard.jpg)
+## Screenshots
 
-Die übersichtliche Einrichtung sucht selbstständig nach Brother-Druckern im Heimnetz und bietet die passenden freien brlaser-Treiber an:
+The setup page is in German for now.
 
-![Einrichtungsassistent mit Druckersuche und Modellauswahl](docs/screenshots/setup.jpg)
+![Brother CUPS dashboard with a Brother MFC-7460DN set up](docs/screenshots/dashboard.jpg)
 
-Danach erscheint der Drucker ganz normal in macOS und nimmt Druckaufträge per AirPrint an:
+The setup assistant searches your home network for Brother printers and offers the matching free brlaser driver:
 
-| Drucker in macOS | Erfolgreicher Druckauftrag |
+![Setup assistant with printer search and model selection](docs/screenshots/setup.jpg)
+
+After that the printer shows up in macOS like any other AirPrint printer:
+
+| Printer in macOS | Print job |
 |---|---|
-| ![Brother MFC-7460DN in den macOS-Druckereinstellungen](docs/screenshots/macos-printer.jpg) | ![Druckauftrag an Brother CUPS in der macOS-Druckerwarteschlange](docs/screenshots/macos-print-job.jpg) |
+| ![Brother MFC-7460DN in the macOS printer settings](docs/screenshots/macos-printer.jpg) | ![Print job to Brother CUPS in the macOS print queue](docs/screenshots/macos-print-job.jpg) |
 
-## Voraussetzungen
+## Supported printers
 
-- Ein Linux-Rechner mit Docker, der dauerhaft läuft (z. B. ZimaOS, Raspberry Pi, Mini-PC)
-- Avahi auf dem Host (bei ZimaOS schon vorhanden), damit der Drucker per Bonjour auftaucht
-- Der Drucker hängt per LAN im Netz und hat eine feste IP (Adressreservierung im Router)
-- Die Ports 631 (AirPrint/CUPS) und 8631 (einfache Einrichtung) sind auf dem Host frei
+Every model that brlaser 6.2.7 (the version in Debian 13 "trixie") supports:
 
-## Installation unter ZimaOS
+| Series | Models |
+|---|---|
+| **DCP** | DCP-1510, DCP-1600, DCP-1610W, DCP-7010, DCP-7020, DCP-7030, DCP-7040, DCP-7055, DCP-7055W, DCP-7060D, DCP-7065DN, DCP-7070DW, DCP-7080, DCP-7080D, DCP-8065DN, DCP-B7500D, DCP-L2500D, DCP-L2510D, DCP-L2520D, DCP-L2520DW, DCP-L2537DW, DCP-L2540DW, DCP-L2550DW, DCP-L2560DW |
+| **HL** | HL-1110, HL-1200, HL-2030, HL-2130, HL-2140, HL-2220, HL-2230, HL-2240, HL-2240D, HL-2250DN, HL-2260, HL-2260D, HL-2270DW, HL-2280DW, HL-5030, HL-5040, HL-5140, HL-5370DW, HL-5450DN, HL-L2300D, HL-L2305, HL-L2310D, HL-L2320D, HL-L2335D, HL-L2340D, HL-L2350DW, HL-L2360D, HL-L2370DN, HL-L2375DW, HL-L2380DW, HL-L2390DW, HL-L2400DW, HL-L2402D, HL-L2405W, HL-L5000D |
+| **MFC** | MFC-1810, MFC-1910W, MFC-7240, MFC-7320, MFC-7340, MFC-7360N, MFC-7365DN, MFC-7420, MFC-7440N, MFC-7460DN, MFC-7860DW, MFC-8440, MFC-8710DW, MFC-8860DN, MFC-9160, MFC-L2690DW, MFC-L2700DN, MFC-L2700DW, MFC-L2710DN, MFC-L2710DW, MFC-L2750DW |
+| **FAX** | FAX-2820, FAX-2840 |
+| **Other brands** | Fuji Xerox DocuPrint P265 dw, Lenovo LJ2650DN |
 
-1. Im App Store auf **Benutzerdefiniert installieren** und dann **Importieren** gehen.
-2. Den Inhalt von [`zimaos-compose.yml`](zimaos-compose.yml) einfügen.
-3. Optional ein `ADMIN_PASSWORD` eintragen. Bleibt es leer, öffnet sich die Einrichtungsoberfläche ohne Login.
-4. Installieren und anschließend die App öffnen. ZimaOS führt direkt zur einfachen Einrichtungsseite.
+Many entries cover a whole series (for example "HL-L2350DW series"). Tested by me: MFC-7460DN. If your model works, feel free to open an issue so it can be marked as tested.
 
-## Installation in Portainer
+Brother printers that already support AirPrint, like the MFC-9332CDW, don't need this container. Add them directly on the Mac with "AirPrint".
 
-1. **Stacks** > **Add stack** > **Web editor** öffnen.
-2. Den Inhalt von [`portainer-compose.yml`](portainer-compose.yml) einfügen.
-3. Unter **Environment variables** optional `ADMIN_PASSWORD` mit dem gewünschten Passwort anlegen. Ohne diese Variable läuft die einfache Oberfläche ohne Login.
-4. **Deploy the stack** anklicken und danach `http://<IP-des-Servers>:8631` öffnen.
+## Requirements
 
-Portainer lädt das fertige Image aus der GitHub Container Registry. Ein lokaler Build ist dafür nicht erforderlich.
+- A Linux machine running Docker that is always on (e.g. ZimaOS, Raspberry Pi, mini PC)
+- Avahi on the host (already included in ZimaOS), so the printer is announced via Bonjour
+- The printer is connected to the network via LAN and has a fixed IP address (DHCP reservation in your router)
+- Ports 631 (AirPrint/CUPS) and 8631 (setup page) are free on the host
 
-## Installation mit Docker Compose
+## Install on ZimaOS
+
+1. In the App Store, choose **Custom Install** and then **Import**.
+2. Paste the contents of [`zimaos-compose.yml`](zimaos-compose.yml).
+3. Optionally enter an `ADMIN_PASSWORD`. If you leave it empty, the setup page opens without a login.
+4. Install and open the app. ZimaOS takes you straight to the setup page.
+
+## Install with Portainer
+
+1. Open **Stacks** > **Add stack** > **Web editor**.
+2. Paste the contents of [`portainer-compose.yml`](portainer-compose.yml).
+3. Under **Environment variables**, optionally add `ADMIN_PASSWORD` with the password you want. Without it, the setup page runs without a login.
+4. Click **Deploy the stack** and then open `http://<server-ip>:8631`.
+
+Portainer pulls the ready-made image from the GitHub Container Registry. No local build needed.
+
+## Install with Docker Compose
 
 ```
 git clone https://github.com/vdite/brother-cups.git
@@ -66,85 +86,85 @@ cd brother-cups
 docker compose up -d --build
 ```
 
-Diese Variante baut das Image bewusst lokal. Wer nur das fertige GitHub-Image starten möchte, verwendet stattdessen `portainer-compose.yml` oder `zimaos-compose.yml`.
+This variant builds the image locally on purpose. To just run the ready-made image from GitHub, use `portainer-compose.yml` or `zimaos-compose.yml` instead.
 
-Danach `http://<IP-des-Servers>:8631` öffnen.
+Then open `http://<server-ip>:8631`.
 
-## Drucker einrichten
+## Set up the printer
 
-1. Die Einrichtungsseite unter `http://<IP-des-Servers>:8631` öffnen. Wenn `ADMIN_PASSWORD` gesetzt ist, mit `admin` und diesem Passwort anmelden.
-2. Kurz warten, bis die Druckersuche abgeschlossen ist, dann den Brother-Drucker auswählen.
-3. Das passende Modell wählen. Bei eindeutigem Modellnamen wird es bereits vorausgewählt.
-4. Papierformat und Duplex prüfen und **Drucker einrichten** anklicken.
-5. Über **Testseite** direkt kontrollieren, ob alles funktioniert.
+1. Open the setup page at `http://<server-ip>:8631`. If `ADMIN_PASSWORD` is set, log in with `admin` and that password.
+2. Wait a moment until the printer search has finished, then select your Brother printer.
+3. Choose the matching model. If the model name is unambiguous, it is already preselected.
+4. Check paper size and duplex, then click **Drucker einrichten** (set up printer).
+5. Use **Testseite** (test page) to check right away that everything works.
 
-Wird der Drucker nicht automatisch gefunden, lässt sich seine feste IP-Adresse eintragen. Die Oberfläche verwendet dann `socket://<IP>:9100`.
+If the printer isn't found automatically, you can enter its fixed IP address. The setup page then uses `socket://<ip>:9100`.
 
-Die bisherige CUPS-Oberfläche bleibt für technische Details und seltene Spezialfälle unter `http://<IP-des-Servers>:631` erreichbar. Normale Nutzer brauchen sie für die Einrichtung nicht mehr.
+The regular CUPS web interface stays available at `http://<server-ip>:631` for technical details and rare special cases. You don't need it for the setup.
 
 <details>
-<summary>Drucker direkt in der CUPS-Expertenansicht einrichten</summary>
+<summary>Set up the printer in the CUPS web interface instead</summary>
 
-1. `http://<IP-des-Servers>:631` im Browser öffnen.
-2. **Verwaltung** > **Drucker hinzufügen**, mit `admin` und dem gesetzten `ADMIN_PASSWORD` anmelden.
-3. Den Drucker aus der Liste der gefundenen Netzwerkdrucker wählen, oder **AppSocket/HP JetDirect** mit `socket://<IP-des-Druckers>:9100`.
-4. „Drucker im Netzwerk freigeben“ ist schon angehakt, so lassen.
-5. Hersteller **Brother**, dann Dein Modell mit **„using brlaser“** wählen.
-6. Unter **Standardeinstellungen** das Papierformat auf A4 setzen und eine Testseite drucken.
+1. Open `http://<server-ip>:631` in your browser.
+2. **Administration** > **Add Printer**, log in with `admin` and the `ADMIN_PASSWORD` you set.
+3. Pick the printer from the list of discovered network printers, or choose **AppSocket/HP JetDirect** with `socket://<printer-ip>:9100`.
+4. "Share This Printer" is already checked, leave it that way.
+5. Choose manufacturer **Brother**, then your model with **"using brlaser"**.
+6. Under **Set Default Options**, set the paper size and print a test page.
 
-Mehrere Drucker sind kein Problem, einfach nacheinander hinzufügen.
+Multiple printers are no problem, just add them one after another.
 
-Ohne `ADMIN_PASSWORD` ist die einfache Oberfläche vollständig nutzbar; administrative Änderungen direkt in CUPS erfordern dagegen ein gesetztes Passwort.
+Without `ADMIN_PASSWORD` the simple setup page is fully usable, but administrative changes directly in CUPS require a password to be set.
 
 </details>
 
-## Oder: Drucker automatisch anlegen
+## Or: create the printer automatically
 
-Wer lieber alles in der Compose-Datei hat, setzt `PRINTER_URI` und `PRINTER_MODEL`. Dann legt der Container den Drucker bei jedem Start selbst an.
+If you prefer to keep everything in the compose file, set `PRINTER_URI` and `PRINTER_MODEL`. The container then creates the printer on every start.
 
-| Variable | Beispiel | Bedeutung |
+| Variable | Example | Meaning |
 |---|---|---|
-| `ADMIN_USER` | `admin` | Benutzername für die Weboberfläche |
-| `ADMIN_PASSWORD` | | Optionales Passwort, leer = Einrichtungsoberfläche ohne Login |
-| `BROTHER_CUPS_UI_PORT` | `8631` | Port der einfachen Einrichtungsoberfläche |
-| `PRINTER_URI` | `socket://192.168.1.50:9100` | Adresse des Druckers (Port 9100 = RAW/JetDirect) |
-| `PRINTER_MODEL` | `MFC-7460DN` | Modell laut brlaser-Liste, alternativ der volle `drv:///…`-Pfad |
-| `PRINTER_NAME` | `Brother` | Name der Druckwarteschlange (ohne Leerzeichen) |
-| `PAPER_SIZE` | `A4` | Standard-Papierformat |
-| `PRINTER_OPTIONS` | `-o Duplex=DuplexNoTumble` | Weitere Optionen für `lpadmin` (optional) |
+| `ADMIN_USER` | `admin` | User name for the web interfaces |
+| `ADMIN_PASSWORD` | | Optional password, empty = setup page without login |
+| `BROTHER_CUPS_UI_PORT` | `8631` | Port of the simple setup page |
+| `PRINTER_URI` | `socket://192.168.1.50:9100` | Printer address (port 9100 = RAW/JetDirect) |
+| `PRINTER_MODEL` | `MFC-7460DN` | Model from the brlaser list, or the full `drv:///…` path |
+| `PRINTER_NAME` | `Brother` | Name of the print queue (no spaces) |
+| `PAPER_SIZE` | `A4` | Default paper size |
+| `PRINTER_OPTIONS` | `-o Duplex=DuplexNoTumble` | Additional options for `lpadmin` (optional) |
 
-Welche Modelle brlaser unterstützt:
+To see which models brlaser supports in your container:
 
 ```
 docker exec brother-cups lpinfo -m | grep brlaser
 ```
 
-Findet das Startskript Dein Modell nicht, schreibt es die Liste ins Container-Log.
+If the start script can't find your model, it writes the list to the container log.
 
-## Am Mac, iPhone und iPad hinzufügen
+## Add the printer on Mac, iPhone and iPad
 
-**Mac:** Systemeinstellungen > Drucker & Scanner > Drucker hinzufügen. Der Drucker taucht mit dem Namen des Servers auf. Bei „Verwenden“ **AirPrint** wählen.
+**Mac:** System Settings > Printers & Scanners > Add Printer. The printer shows up with the server's name. Under "Use", choose **AirPrint**.
 
-**iPhone und iPad:** Teilen > Drucken. Der Drucker erscheint automatisch.
+**iPhone and iPad:** Share > Print. The printer appears automatically.
 
-## Was nicht geht
+## Limitations
 
-- **Scannen und Fax:** Der Container kümmert sich nur ums Drucken.
-- **Drucker, die brlaser nicht kennt:** Die Liste der unterstützten Modelle steht im [brlaser-Repo](https://github.com/Owl-Maintain/brlaser).
-- CUPS meldet beim Einrichten, dass Druckertreiber „deprecated“ sind. Mit CUPS 2.x funktionieren sie weiterhin.
+- **Scanning and fax:** The container only handles printing.
+- **Printers brlaser doesn't know:** see [Supported printers](#supported-printers).
+- CUPS warns during setup that printer drivers are "deprecated". They keep working with CUPS 2.x.
 
-## Sicherheit
+## Security
 
-- Drucken und Ansehen der CUPS-Expertenansicht ist für alle Geräte im Netz erlaubt.
-- Wenn `ADMIN_PASSWORD` gesetzt ist, schützt es die einfache Einrichtungsoberfläche und administrative Änderungen in CUPS.
-- Ohne `ADMIN_PASSWORD` ist die einfache Oberfläche für alle Geräte im Heimnetz erreichbar. CSRF-Schutz und Sitzungen bleiben aktiv, ersetzen aber keine Anmeldung. In Netzen mit nicht vertrauenswürdigen Teilnehmern sollte deshalb ein Passwort gesetzt werden.
-- Beide Oberflächen laufen im Heimnetz über HTTP. Ein gesetztes Passwort geht daher unverschlüsselt durchs LAN. Für ein privates Netz ist das üblich, für Firmennetze nicht.
-- Den Container nicht ins Internet freigeben.
+- Printing and viewing the CUPS web interface is allowed for every device on the network.
+- If `ADMIN_PASSWORD` is set, it protects the simple setup page and administrative changes in CUPS.
+- Without `ADMIN_PASSWORD` the simple setup page is reachable by every device on your home network. CSRF protection and sessions stay active, but they don't replace a login. On networks with untrusted devices, set a password.
+- Both web interfaces use plain HTTP. A password therefore travels unencrypted through your LAN. That's common for a private network, not for a company network.
+- Don't expose the container to the internet.
 
-## Lizenz
+## License
 
-Der selbst entwickelte Projektcode und die Repo-Dateien stehen unter der [MIT-Lizenz](LICENSE).
+The project's own code and the files in this repo are licensed under the [MIT License](LICENSE).
 
-Das gebaute Image als Ganzes ist nicht ausschließlich MIT-lizenziert. Es enthält unveränderte Debian-Pakete mit eigenen Lizenzen, unter anderem CUPS, cups-filters, brlaser, Ghostscript und Poppler. Die Details, Quellcode-Links und Fundstellen im Image stehen in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). GitHub Actions veröffentlicht zusätzlich SBOM und Build-Provenance.
+The built image as a whole is not exclusively MIT-licensed. It contains unmodified Debian packages with their own licenses, including CUPS, cups-filters, brlaser, Ghostscript and Poppler. Details, source links and where to find them in the image are in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). GitHub Actions also publishes an SBOM and build provenance.
 
-Brother ist eine Marke der Brother Industries, Ltd. Dieses Projekt steht in keiner Verbindung zu Brother.
+Brother is a trademark of Brother Industries, Ltd. This project is not affiliated with Brother.
