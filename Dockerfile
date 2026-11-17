@@ -1,5 +1,5 @@
 # Build the small, statically linked setup page.
-FROM golang:1.24-bookworm AS ui-builder
+FROM golang:1.27-trixie AS ui-builder
 
 WORKDIR /src
 COPY setup-ui/go.mod ./
